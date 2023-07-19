@@ -3,11 +3,28 @@ const bcryptjs = require("bcryptjs");
 
 const User = require("../models/user");
 
-const usuariosGet = (req = request, res = response) => {
+const userGet = (req = request, res = response) => {
   const { q, firstName = "No name", lastName = "No name" } = req.query;
   res.json({ msg: "get API - controller", q, firstName, lastName });
 };
-const usuariosPost = async (req, res = response) => {
+
+const userGetMany = async (req = request, res = response) => {
+  // const { q, firstName = "No name", lastName = "No name" } = req.query;
+  const { limit = 5, from = 0 } = req.query;
+  const query = { deleted: false };
+
+  // const users = await User.find(query).skip(Number(from)).limit(Number(limit));
+  // const totalUsersFromGet = await User.countDocuments(query);
+
+  const [total, users] = await Promise.all([
+    User.countDocuments(query),
+    User.find(query).skip(Number(from)).limit(Number(limit)),
+  ]);
+
+  res.json({ total, users });
+};
+
+const userPost = async (req, res = response) => {
   const { firstName, lastName, email, password, role } = req.body;
   const user = new User({ firstName, lastName, email, password, role });
 
@@ -19,21 +36,38 @@ const usuariosPost = async (req, res = response) => {
 
   res.json({ user });
 };
-const usuariosPut = (req, res = response) => {
+
+const userPut = async (req, res = response) => {
   const { id } = req.params;
+  const { password, email, googleSignIn, deleted, _id, ...rest } = req.body;
+
+  if (password) {
+    //Password encryptation
+    const salt = bcryptjs.genSaltSync();
+    rest.password = bcryptjs.hashSync(password, salt);
+  }
+  const user = await User.findByIdAndUpdate(id, rest);
+
   res.json({ msg: "put API - controller", id });
 };
-const usuariosPatch = (req, res = response) => {
+
+const userPatch = (req, res = response) => {
   res.json({ msg: "patch API - controller" });
 };
-const usuariosDelete = (req, res = response) => {
-  res.json({ msg: "delete API - controller" });
+
+const userDelete = async (req, res = response) => {
+  const { id } = req.params;
+
+  const user = await User.findByIdAndUpdate(id, { deleted: true });
+
+  res.json(user);
 };
 
 module.exports = {
-  usuariosGet,
-  usuariosPost,
-  usuariosPut,
-  usuariosPatch,
-  usuariosDelete,
+  userGet,
+  userPost,
+  userPut,
+  userPatch,
+  userDelete,
+  userGetMany,
 };
