@@ -1,12 +1,18 @@
 const express = require("express");
 const cors = require("cors");
+const { dbConnection } = require("../db/config");
 
 class Server {
   constructor() {
     this.app = express();
     this.port = process.env.PORT;
+    this.connectToDB();
     this.middlewares();
     this.routes();
+  }
+
+  async connectToDB() {
+    await dbConnection();
   }
 
   middlewares() {
@@ -20,7 +26,7 @@ class Server {
   }
   listen() {
     this.app.listen(this.port, () => {
-      console.log("Example app listening at http://localhost:" + this.port);
+      console.log("App listening at http://localhost:" + this.port);
     });
   }
 }
